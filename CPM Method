@@ -1,0 +1,59 @@
+# ----- SIMPLE CPM PROGRAM -----
+
+file_name = "precedence-relationship.txt"
+
+# Store data
+duration = {}
+pred = {}
+ES = {}
+EF = {}
+LS = {}
+LF = {}
+Slack = {}
+names = []
+
+# ----- Step 1: Read input file -----
+for line in open(file_name):
+    w = line.strip().split(" ")
+    name = w[0]
+    duration[name] = int(w[1])
+    pred[name] = w[2].split(",") if len(w) > 2 and w[2] != "" else []
+    names.append(name)
+
+# Build successor list automatically
+succ = {n: [] for n in names}
+for n in names:
+    for p in pred[n]:
+        succ[p].append(n)
+
+# ----- Step 2: Forward Pass (ES, EF) -----
+project_finish = 0
+
+for n in names:
+    if pred[n] == []:
+        ES[n] = 0
+    else:
+        ES[n] = max(EF[p] for p in pred[n])
+    EF[n] = ES[n] + duration[n]
+    project_finish = max(project_finish, EF[n])
+
+# ----- Step 3: Backward Pass (LS, LF) -----
+for n in reversed(names):
+    if succ[n] == []:
+        LF[n] = project_finish
+    else:
+        LF[n] = min(LS[s] for s in succ[n])
+    LS[n] = LF[n] - duration[n]
+    Slack[n] = LS[n] - ES[n]
+
+# ----- Step 4: Print Results -----
+critical = []
+
+print("\n--- CPM RESULTS (Simplified) ---")
+for n in names:
+    print(f"{n}: ES={ES[n]}, EF={EF[n]}, LS={LS[n]}, LF={LF[n]}, Slack={Slack[n]}")
+    if Slack[n] == 0:
+        critical.append(n)
+
+print("\nCritical Path:", " -> ".join(critical))
+print("Project Time:", project_finish)
